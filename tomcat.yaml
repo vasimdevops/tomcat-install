@@ -79,23 +79,28 @@
         chdir : "{{TOMCAT_DIR}}/apache-tomcat-9.0.19/bin"
       when : output.rc != 0
 
-    - name : create db layer for mariadb
-      hosts : DB 
-      become : yes
-      tasks :
+- name : create db layer for mariadb
+  hosts : DB 
+  become : yes
+  tasks :
 
-        - name : define DEV db variables
-          set_fact :
-            DB_NAME : studentdevapp
-            DB_USER : student
-            DB_PASSWORD : student@1
-        - name : copy the template into mariadb
-          copy : 
-            src : /var/lib/jenkins/files/studentapp.sql.j2
-            dest : /tmp/studentapp.sql
-        - name : run the sql file
-          mysql_db :
-            state : import 
-            name : all
-            import : /tmp/studentapp.sql
+    - name : define values to db variables
+      set_fact :
+        DB_NAME : studentdevapp
+        DB_USER : student
+        DB_PASSWORD : student@1
 
+    - name : coypying the sql file to mariadb
+      copy :
+        src : /var/lib/jenkins/files/studentdapp.sql.j2
+        dest : /tmp/studentapp.sql
+
+    - name : running the sql file
+      mysql_db :
+        state : import
+        name : all
+        target : /tmp/studentapp.sql
+
+
+
+        
