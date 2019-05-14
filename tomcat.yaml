@@ -59,7 +59,7 @@
       blockinfile :
         path : "{{TOMCAT_DIR}}/apache-tomcat-9.0.19/conf/context.xml"
         block : |
-          <Resource name="jdbc/TestDB" auth="Container" type="javax.sql.DataSource" maxTotal="100" maxIdle="30" maxWaitMillis="10000" username="student" password="student@1" driverClassName="com.mysql.jdbc.Driver" url="jdbc:mysql://mariadb:3306/studentdevapp"/>
+          <Resource name="jdbc/TestDB" auth="Container" type="javax.sql.DataSource" maxTotal="100" maxIdle="30" maxWaitMillis="10000" username="student" password="student@1" driverClassName="com.mysql.jdbc.Driver" url="jdbc:mysql://mariadb:3306/studentdapp"/>
         insertbefore : "</Context>"
         
     - name : check the running status of tomcat
@@ -79,32 +79,6 @@
         chdir : "{{TOMCAT_DIR}}/apache-tomcat-9.0.19/bin"
       when : output.rc != 0
 
-- name : create db layer for mariadb
-  hosts : DB 
-  become : yes
-  tasks :
-    - name : installing the mysql-python variables
-      yum :
-        name : MySQL-python
-        state : latest
-
-    - name : define values to db variables
-      set_fact :
-        DB_NAME : studentdevapp
-        DB_USER : student
-        DB_PASSWORD : student@1
-
-
-    - name : coypying the sql file to mariadb
-      template :
-        src : /var/lib/jenkins/files/studentapp.sql.j2
-        dest : /tmp/studentapp.sql
-
-    - name : running the sql file
-      mysql_db :
-        state : import
-        name : all
-        target : /tmp/studentapp.sql
 
 
 
