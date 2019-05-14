@@ -83,6 +83,10 @@
   hosts : DB 
   become : yes
   tasks :
+    - name : installing the mysql-python variables
+      yum :
+        name : MySQL-python
+        state : latest
 
     - name : define values to db variables
       set_fact :
@@ -90,8 +94,9 @@
         DB_USER : student
         DB_PASSWORD : student@1
 
+
     - name : coypying the sql file to mariadb
-      copy :
+      template :
         src : /var/lib/jenkins/files/studentdapp.sql.j2
         dest : /tmp/studentapp.sql
 
