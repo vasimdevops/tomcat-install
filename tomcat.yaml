@@ -1,0 +1,80 @@
+- name : app-server
+  hosts : DEV
+  tags :
+    - APP
+  become : yes
+  vars :
+    - USERNAME : tomcat
+    - TOMCAT_DIR : /tomcat
+    - STUDENT_WAR : https://github.com/devops2k18/DevOpsDecember/raw/master/APPSTACK/student.war
+    - MYSQL_CONNECTOR : https://github.com/devops2k18/DevOpsDecember/raw/master/APPSTACK/mysql-connector-java-5.1.40.jar
+  tasks :
+    - name : install java
+      yum :
+        name : java
+        state : latest
+
+    - name : create a user for tomcat
+      user :
+        name : "{{USERNAME}}"
+
+    - name : create a directory for tomcat
+      file :
+        path : "{{TOMCAT_DIR}}"
+        owner : "{{USERNAME}}"
+        group : "{{USERNAME}}"
+        mode : 0755
+        state : directory
+
+    - name : download  and extract tomcat
+      unarchive :
+        src : https://www-us.apache.org/dist/tomcat/tomcat-9/v9.0.19/bin/apache-tomcat-9.0.19.tar.gz
+        dest : "{{TOMCAT_DIR}}"
+        remote_src : yes
+      become_user : "{{USERNAME}}"
+
+    - name : find all files from webapps directory
+      find :
+        paths : "{{TOMCAT_DIR}}/apache-tomcat-9.0.19/webapps"
+        file_type : any
+      register : findout
+
+    - name : remove all files
+      file :
+        path : "{{item.path}}"
+        state : absent
+      loop :
+        "{{findout.files}}"
+
+    - name : download student.war
+      get_url :
+        url : "{{item.URL}}"
+        dest : "{{item.dest}}"
+      loop :
+        - { URL : "{{STUDENT_WAR}}", dest: "{{TOMCAT_DIR}}/apache-tomcat-9.0.19/webapps"}
+        - { URL : "{{MYSQL_CONNECTOR}}", dest : "{{TOMCAT_DIR}}/apache-tomcat-9.0.19/lib"}
+      become_user : "{{USERNAME}}"
+
+    - name : edit context.xml
+      blockinfile :
+        path : "{{TOMCAT_DIR}}/apache-tomcat-9.0.19/conf/context.xml"
+        block : |
+          <Resource name="jdbc/TestDB" auth="Container" type="javax.sql.DataSource" maxTotal="100" maxIdle="30" maxWaitMillis="10000" username="student" password="student@1" driverClassName="com.mysql.jdbc.Driver" url="jdbc:mysql://localhost:3306/studentapp"/>
+        insertbefore : "</Context>"
+        
+    - name : check the running status of tomcat
+      shell : ps -ef | grep tomcat | grep -v grep
+      register : output
+      ignore_errors : True
+
+    - name : restart tomcat
+      shell : nohup sh shutdown.sh && nohup sh startup.sh
+      args :
+        chdir : "{{TOMCAT_DIR}}/apache-tomcat-9.0.19/bin"
+      when : output.rc == 0
+
+    - name : start the app-server
+      shell : nohup sh startup.sh
+      args :
+        chdir : "{{TOMCAT_DIR}}/apache-tomcat-9.0.19/bin"
+      when : output.rc != 0
