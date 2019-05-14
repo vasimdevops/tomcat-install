@@ -82,6 +82,11 @@
 - name : create db layer for mariadb
   hosts : DEV
   tasks : 
+    - name : download mysql-python
+      yum :
+        name : MySQL-python
+        state : latest
+
 
     - name : asiginging the values to variables
       set_fact :
