@@ -81,6 +81,7 @@
 
 - name : create db layer for mariadb
   hosts : DEV
+  become : yes
   tasks : 
     - name : download mysql-python
       yum :
